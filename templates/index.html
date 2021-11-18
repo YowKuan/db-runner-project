@@ -7,20 +7,11 @@
   </style>
 
 
-<!-- <body>
-  <h1>Some famous Computer Scientists</h1>
-  <div>{{data}}</div>
+<body>
+  <h1>CU-Runner</h1>
 
-  <div>
-    {% for n in data %}
-    <div>{{n}}</div>
-    {% endfor %}
-  </div> -->
-
-<p><a href="{{ url_for('index') }}">Go to the other page</a></p>
-
-<form method="POST" action="/add">
-<p>Name of new computer scientist: <input type="text" name="name"> <input type="submit" value="Add"></p>
+<form method="POST" action="/main">
+<p>Enter your user id: <input type="text" name="uid"> <input type="submit" value="Login"></p>
 </form>
 
 </body>
