@@ -1,0 +1,32 @@
+<html>
+  <style>
+    body{ 
+      font-size: 15pt;
+      font-family: arial;
+    }
+  </style>
+
+
+<body>
+  <h1>All Clubs</h1>
+
+  <div>
+    {% for name, amount, leader in club_name|zip(club_amount, leader_name)%}
+    Club Name:{{ name }} Current People: {{ amount}} 
+    Leader: {{leader}}
+    <form action='/add_item', method="POST">
+        <button>Join this group!</button>
+    </form>
+{% endfor %}
+  </div>
+
+<p><a href="another">Go to the other page</a></p>
+
+<form method="POST" action="/add">
+<p>Name of new computer scientist: <input type="text" name="name"> <input type="submit" value="Add"></p>
+</form>
+
+</body>
+
+
+</html>

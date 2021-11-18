@@ -12,10 +12,14 @@ import os
   # accessible as a variable in index.html:
 from sqlalchemy import *
 from sqlalchemy.pool import NullPool
+from sqlalchemy.sql import text
 from flask import Flask, request, render_template, g, redirect, Response
+from flask_restful import Resource, Api
 
 tmpl_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
 app = Flask(__name__, template_folder=tmpl_dir)
+app.jinja_env.filters['zip'] = zip
+api = Api(app)
 
 
 #
@@ -29,7 +33,7 @@ app = Flask(__name__, template_folder=tmpl_dir)
 #
 #     DATABASEURI = "postgresql://gravano:foobar@34.74.246.148/proj1part2"
 #
-DATABASEURI = "postgresql://user:password@34.74.246.148/proj1part2"
+DATABASEURI = "postgresql://sc4926:8023@34.74.246.148/proj1part2"
 
 
 #
@@ -41,12 +45,23 @@ engine = create_engine(DATABASEURI)
 # Example of running queries in your database
 # Note that this will probably not work if you already have a table named 'test' in your database, containing meaningful data. This is only an example showing you how to run queries in your database using SQLAlchemy.
 #
-engine.execute("""CREATE TABLE IF NOT EXISTS test (
-  id serial,
-  name text
-);""")
-engine.execute("""INSERT INTO test(name) VALUES ('grace hopper'), ('alan turing'), ('ada lovelace');""")
+# engine.execute("""CREATE TABLE IF NOT EXISTS test (
+#   id serial,
+#   name text
+# );""")
+# engine.execute("""INSERT INTO test(name) VALUES ('grace hopper'), ('alan turing'), ('ada lovelace');""")
+# class All_Store(Resource):
+#     def get(self):
+#       cursor = g.conn.execute("SELECT name FROM store")
+#       names = []
+#       for result in cursor:
+#         print(result[0])
+#         names.append(result[0])  # can also be accessed using result[0]
+#       cursor.close()
+#       context = dict(data = names)
+#       return render_template("store.html", **context)
 
+# api.add_resource(All_Store, '/store')
 
 @app.before_request
 def before_request():
@@ -57,6 +72,7 @@ def before_request():
 
   The variable g is globally accessible.
   """
+  print("before request")
   try:
     g.conn = engine.connect()
   except:
@@ -89,6 +105,8 @@ def teardown_request(exception):
 # see for routing: https://flask.palletsprojects.com/en/2.0.x/quickstart/?highlight=routing
 # see for decorators: http://simeonfranklin.com/blog/2012/jul/1/python-decorators-in-12-steps/
 #
+
+
 @app.route('/')
 def index():
   """
@@ -158,9 +176,74 @@ def index():
 # Notice that the function name is another() rather than index()
 # The functions for each app.route need to have different names
 #
+@app.route('/club')
+def all_clubs():
+    cursor = g.conn.execute("SELECT C.name, A.club_id, COUNT(*) FROM club C NATURAL JOIN attend A GROUP BY C.name, A.club_id ORDER BY COUNT(*) DESC" )
+    club_name = []
+    club_id = []
+    club_amount = []
+    for result in cursor:
+      #print(result[0])
+      club_name.append(result[0]) 
+      club_id.append(result[1])
+      club_amount.append(result[2])
+    cursor = g.conn.execute("SELECT U.name, L.club_id FROM users U NATURAL JOIN leads L")
+    leader_name = []
+    for result in cursor:
+      leader_name.append(result[0])
+    cursor.close()
+    context = dict(club_name = club_name, club_id=club_id, club_amount=club_amount, leader_name=leader_name )
+    return render_template("club.html", **context)
+
+
+@app.route('/store')
+def get_store():
+      cursor = g.conn.execute("SELECT address FROM store")
+      names = []
+      for result in cursor:
+        #print(result[0])
+        names.append(result[0])  # can also be accessed using result[0]
+      cursor.close()
+      context = dict(data = names)
+      return render_template("store.html", **context)
+
+@app.route('/add_item', methods=['GET','POST'])
+def add_item():
+    if request.method == 'GET':
+      return 'add item function waiting...'
+    elif request.method == 'POST':
+      return 'Posting'
+    else:
+      return "Method unknown"
+      # cursor = g.conn.execute("SELECT address FROM store")
+      # names = []
+      # for result in cursor:
+      #   #print(result[0])
+      #   names.append(result[0])  # can also be accessed using result[0]
+      # cursor.close()
+      # context = dict(data = names)
+      # return render_template("store.html", **context)
+      
+
+@app.route('/store/<store_addr>')
+def get_store_by_id(store_addr):
+      cursor = g.conn.execute("SELECT S.name, I.name FROM store S Natural Join have H, item I WHERE S.zip =  %(store_addr)s LIMIT 10", {'store_addr': store_addr} )
+      store_names = []
+      item_names = []
+      for result in cursor:
+        print(result)
+        store_names.append(result[0])
+        item_names.append(result[1])# can also be accessed using result[0]
+      cursor.close()
+      context = dict(store_names = store_names, item_names=item_names)
+      return render_template("store_individual.html", **context)
+      
+      
+
+
 @app.route('/another')
 def another():
-  return render_template("another.html")
+  return render_template("index.html")
 
 
 # Example of adding new data to the database
@@ -178,28 +261,29 @@ def login():
 
 
 if __name__ == "__main__":
-  import click
+      app.run(host='0.0.0.0', debug=True, port=8111)
+  # import click
 
-  @click.command()
-  @click.option('--debug', is_flag=True)
-  @click.option('--threaded', is_flag=True)
-  @click.argument('HOST', default='0.0.0.0')
-  @click.argument('PORT', default=8111, type=int)
-  def run(debug, threaded, host, port):
-    """
-    This function handles command line parameters.
-    Run the server using:
+  # @click.command()
+  # @click.option('--debug', is_flag=True)
+  # @click.option('--threaded', is_flag=True)
+  # @click.argument('HOST', default='0.0.0.0')
+  # @click.argument('PORT', default=8111, type=int)
+  # def run(debug, threaded, host, port):
+  #   """
+  #   This function handles command line parameters.
+  #   Run the server using:
 
-        python3 server.py
+  #       python3 server.py
 
-    Show the help text using:
+  #   Show the help text using:
 
-        python3 server.py --help
+  #       python3 server.py --help
 
-    """
+  #   """
 
-    HOST, PORT = host, port
-    print("running on %s:%d" % (HOST, PORT))
-    app.run(host=HOST, port=PORT, debug=debug, threaded=threaded)
+  #   HOST, PORT = host, port
+  #   print("running on %s:%d" % (HOST, PORT))
+  #   app.run(host=HOST, port=PORT, debug=debug, threaded=threaded)
 
-  run()
+  # run()
