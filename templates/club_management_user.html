@@ -12,6 +12,16 @@
   <h3>Add new Friends to this club!</h3>
   
   <form action='/club/management/{{club_id}}/user', method="POST">
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <ul class=flashes>
+            {% for message in messages %}
+            <li>{{ message }}</li>
+            {% endfor %}
+            </ul>
+        {% endif %}
+        {% endwith %}
+        {% block body %}{% endblock %}
     <p>Enter user id: <input type="text" name="uid"> 
     <button>Add</button>
     </form>
@@ -19,12 +29,11 @@
   <h3>Here are our lovely members</h3>
   <div>
     {% for member_name, user_id in member_names|zip(user_ids) %}
-    <p><a href="/profile/{{user_id}}"> {{user_id}} {{member_name}}</a></p>
-    <li>
+    <li><a href="/profile/{{user_id}}"> {{user_id}} {{member_name}}</a></li>
+    
         <form action='/club/management/{{club_id}}/user/{{user_id}}', method="DELETE">
             <button>Kick the user out of this club</button>
         </form>
-    </li>
     {% endfor %}
   </div>
 

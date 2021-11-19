@@ -9,7 +9,9 @@
 
 <body>
   <h1>CU-Runner</h1>
-
+  {% if message %}
+    <h3>{{message}}</h3>
+  {% endif %}
 <form method="POST" action="/main">
 <p>Enter your user id: <input type="text" name="uid"> <input type="submit" value="Login"></p>
 </form>

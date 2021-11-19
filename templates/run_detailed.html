@@ -1,0 +1,43 @@
+<html>
+    <style>
+        body{ 
+        font-size: 15pt;
+        font-family: arial;
+        }
+    </style>
+  
+    <body>
+        <h2>Hi It's your running advanced stats!</h2>
+        <h3>Keep going!</h3>
+
+        <h4>Running detailed stats</h4>
+        <div>
+            {% for key, value in run_detail_stats.items() %}
+                {% if key != 'run_id' and  key != 'user_id' %}    
+                    <ul>{{ key }} : {{ value }}</ul>
+                {% endif %}
+            {% endfor %}
+        </div>
+        <h4>Running stats per Mile</h4>
+        <div>
+            {% for run in run_mile_stats %}
+                <li> Mile: {{run.km}}
+                    {% for key, value in run.items() %}
+                        {% if key != 'run_id' and key != 'user_id' and key != 'km'%}    
+                            <ul>{{ key }} : {{ value }}</ul>
+                        {% endif %}
+                    {% endfor %}
+                </li>
+            {% endfor %}
+        </div>
+        
+
+    
+    <p><a href="/run">Back to Run Stats</a></p>
+    <p><a href="/main">Back to Main Page</a></p>
+    
+  
+    </body>
+  
+  
+</html>

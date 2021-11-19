@@ -1,0 +1,37 @@
+<html>
+    <style>
+        body{ 
+        font-size: 15pt;
+        font-family: arial;
+        }
+    </style>
+  
+    <body>
+        <h2>Hi It's your completed individual task detailed information!</h2>
+        <h3>You are great! Keep going!</h3>
+
+        <h4>Individual task detailed information</h4>
+        <div>
+            {% for key, value in task_info.items() %}
+                <ul>{{ key }} : {{ value }}</ul>
+            {% endfor %}
+        </div>
+        <div>
+            {% for key, value in do_task_info.items() %}
+                {% if key != 'user_id' and  key != 'task_id' %}    
+                    <ul>{{ key }} : {{ value }}</ul>
+                {% endif %}
+            {% endfor %}
+        </div>
+        
+
+    
+    <p><a href="/complete_task">Back to Complete Tasks</a></p>
+    <p><a href="/task">Back to Task Page</a></p>
+    <p><a href="/main">Back to Main Page</a></p>
+    
+  
+    </body>
+  
+  
+</html>
