@@ -180,10 +180,16 @@ def manage_club_user(club_id):
       return render_template("club_management_user.html", **context)
     elif request.method == 'POST':
       try:
-        g.conn.execute("INSERT INTO attend(user_id, club_id) VALUES (%(user_id)s, %(club_id)s)", {'user_id': request.form['uid'], 'club_id': club_id} )
-        return redirect(url_for('manage_club_user', club_id=club_id))
-      except:
-        flash("The person is already in your club!")
+          g.conn.execute("INSERT INTO attend(user_id, club_id) VALUES (%(user_id)s, %(club_id)s)", {'user_id': request.form['uid'], 'club_id': club_id} )
+          return redirect(url_for('manage_club_user', club_id=club_id))
+
+      except Exception as ex:
+        ex = str(ex).split(')')[0][1:]
+        if ex == 'psycopg2.errors.UniqueViolation':   
+          flash('The user is already in the club')
+        else:
+          flash('The user is invalid')
+          
         return redirect(url_for('manage_club_user', club_id=club_id))
 
 @app.route('/club/<club_id>/<club_task_id>')
@@ -336,14 +342,23 @@ def main_page():
         user_id = session.get('uid')
     try:
         cur = g.conn.execute("SELECT name FROM sc4926.users WHERE user_id = %(user_id)s", {'user_id': user_id})
-    except:
-        return render_template("index.html", message='Invalid user id!')
+            
+        user_info = dict(cur.fetchone())
+        
+        cur.close()
+        user_info['first_name'] = user_info['name'].split()[0]
+        return render_template("main.html", **user_info)
 
-    
-    user_info = dict(cur.fetchone())
-    cur.close()
-    user_info['first_name'] = user_info['name'].split()[0]
-    return render_template("main.html", **user_info)
+    except Exception as ex:
+      print("hhhhhhhhhh", ex)
+      if str(ex) == "'NoneType' object has no attribute 'execute'":      
+        return render_template("index.html", message="database error")
+      else:
+        return render_template("index.html", message="invalid user")
+            
+            
+    # except:
+    #     return render_template("index.html", message='Invalid user id!')
 
 @app.route('/run')
 def run():
