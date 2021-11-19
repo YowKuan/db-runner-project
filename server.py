@@ -268,14 +268,42 @@ def get_store():
 
 @app.route('/items')
 def user_items():
-    cursor = g.conn.execute("SELECT I.name FROM own O Natural Join item I WHERE O.user_id = %(user_id)s", {'user_id': session['uid']} )
-    users_item = []
+    cursor = g.conn.execute("SELECT I.name, I.product_id FROM own O Natural Join item I WHERE O.user_id = %(user_id)s", {'user_id': session['uid']} )
+    users_item, product_ids = [], []
     for result in cursor:
       #print(result[0])
-      users_item.append(result[0])  # can also be accessed using result[0]
+      users_item.append(result[0])
+      product_ids.append(result[1])
     cursor.close()
-    context = dict(users_item = users_item)
+    context = dict(users_item = users_item, product_ids=product_ids)
     return render_template("user_item.html", **context)
+
+@app.route('/favorite')
+def favorite_items():
+    cursor = g.conn.execute("SELECT I.name, I.product_id FROM is_favorite F Natural Join item I WHERE F.user_id = %(user_id)s", {'user_id': session['uid']} )
+    favorite_items, favorite_ids = [], []
+    for result in cursor:
+      favorite_items.append(result[0])  
+      favorite_ids.append(result[1])
+    cursor.close()
+    context = dict(favorite_items = favorite_items, favorite_ids=favorite_ids)
+    return render_template("favorite_item.html", **context)
+@app.route('/favorite/add', methods=['POST'])
+def add_to_favorite():
+    to_fav_id = request.form['id']
+    try:
+      g.conn.execute("INSERT INTO is_favorite(user_id, product_id) VALUES (%(user_id)s, %(item_id)s)", {'user_id': int(session['uid']), 'item_id': to_fav_id} )
+      return redirect(url_for('favorite_items'))
+    except:
+      flash("This item has already been added")
+      return redirect(url_for('favorite_items'))
+    
+
+@app.route('/favorite/remove/<product_id>')
+def remove_from_favorite(product_id):
+    g.conn.execute("DELETE FROM is_favorite I WHERE I.product_id = %(product_id)s AND I.user_id = %(user_id)s", {"product_id":product_id, "user_id":session['uid']})
+    return redirect(url_for('favorite_items'))
+    
 
       
 

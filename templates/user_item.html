@@ -10,11 +10,23 @@
 <body>
   <h1>Here is the item you have!</h1>
   <div>{{data}}</div>
+  {% with messages = get_flashed_messages() %}
+  {% if messages %}
+      <ul class=flashes>
+      {% for message in messages %}
+      {{ message }}
+      {% endfor %}
+      </ul>
+  {% endif %}
+  {% endwith %}
 
   <div>
-    {% for n in users_item %}
+    {% for n, product_id in users_item|zip(product_ids)%}
     
     <div>{{n}}</div>
+    <form action='favorite/add', method="POST">
+      <button name='id' value={{product_id}}>Add to favorite</button>
+    </form> 
     {% endfor %}
   </div>
   <p><a href="/store">Back to Store Page and Keep shopping!</a></p>

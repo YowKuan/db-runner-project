@@ -1,0 +1,26 @@
+<html>
+  <style>
+    body{ 
+      font-size: 15pt;
+      font-family: arial;
+    }
+  </style>
+
+
+<body>
+  <h1>Here are your favorite items!</h1>
+  <div>{{data}}</div>
+
+  <div>
+    {% for n, id in favorite_items|zip(favorite_ids) %}
+    
+    <div>{{n}}</div>
+    <form action='favorite/remove/{{id}}', method="DELETE">
+        <button>Remove from favorite</button>
+    </form>
+    {% endfor %}
+  </div>
+  <p><a href="/items">Back to Item Page!</a></p>
+  <p><a href="/main">Back to Main Page</a></p>
+
+</body>
