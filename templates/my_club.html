@@ -1,0 +1,19 @@
+<html>
+  <style>
+    body{ 
+      font-size: 15pt;
+      font-family: arial;
+    }
+  </style>
+
+
+<body>
+  <h1>Here're the clubs you've joined!/h1>
+  <div>
+    {% for club_id, club in club_ids|zip(clubs) %}
+    <p><a href="club/{{club_id}}">{{club_id}} : {{club}} </a></p>
+    </div>
+    {% endfor %}
+  </div>
+
+<p><a href="main">Go back to home page</a></p>

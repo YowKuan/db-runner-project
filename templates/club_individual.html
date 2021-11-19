@@ -1,0 +1,40 @@
+<html>
+  <style>
+    body{ 
+      font-size: 15pt;
+      font-family: arial;
+    }
+  </style>
+
+
+<body>
+  <h1>Welcome to club {{club_name[0]}}</h1>
+  <h3>Here are our lovely members</h3>
+  <div>
+    {% for member_name in member_names %}
+    <li>{{member_name}}
+        <!-- <form action='/add_item/{{item_id}}', method="POST">
+            <button>Add the item</button>
+        </form> -->
+    </li>
+    {% endfor %}
+  </div>
+
+  <h3>Club Tasks We have done</h3>
+  <table>
+    <tr>
+        <th>Task id</th>
+        <th>Start time</th> 
+        <th>Finish time</th>
+    </tr>
+    {% for past_task in past_tasks %}
+
+    <tr>
+      <th>{{past_task[0]}}</th>
+      <th>{{past_task[1]}}</th> 
+      <th>{{past_task[2]}}</th>
+    </tr>
+    {% endfor %}
+  </table>
+
+<p><a href="main">Go back to home page</a></p>

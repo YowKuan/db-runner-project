@@ -1,0 +1,39 @@
+<html>
+    <style>
+        body{ 
+        font-size: 15pt;
+        font-family: arial;
+        }
+    </style>
+    
+    <body>
+        <h4>Club task information</h4>
+        <p><a href='/club/management/{{club_id}}/club_task'>Back to Your Club Task</a></p>
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <ul class=flashes>
+            {% for message in messages %}
+            <li>{{ message }}</li>
+            {% endfor %}
+            </ul>
+        {% endif %}
+        {% endwith %}
+        {% block body %}{% endblock %}
+        <div>
+            {% for club_task in club_task_detail %}
+            <p><a href="/club_tasks/add/{{club_task[0]}}"> Add task {{club_task[0]}} </a></p>
+            <li>difficulty : {{ club_task[1]}}</li>
+            <li>reward : {{ club_task[2]}}</li>
+            <li>experience : {{ club_task[4]}}</li>
+            <li>min_people_limit : {{ club_task[5]}}</li>
+            {% endfor %}
+
+        </div>
+
+    <p><a href="/main">Back to Main Page</a></p>
+    
+  
+    </body>
+  
+  
+</html>
