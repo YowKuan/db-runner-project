@@ -9,12 +9,12 @@
 
 <body>
   <h1>Welcome to Store: </h1>
-  <h1>{{store_names[0]}}</h1>
+  <h1>{{store_addresses[0]}}</h1>
   <h2>Here are the first 10 available items in our store</h2>
   <div>
-    {% for item, item_id in item_names|zip(item_ids) %}
-    <div>{{item_id}} : {{item}} 
-        <form action='/add_item/{{item_id}}', method="POST">
+    {% for i in random_sample %}
+    <div>{{item_ids[i]}} : {{item_names[i]}} 
+        <form action='/add_item/{{item_ids[i]}}', method="POST">
             <button>Add the item</button>
         </form>
     </div>

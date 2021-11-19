@@ -16,6 +16,7 @@ from sqlalchemy.sql import text
 from flask import Flask, request, render_template, g, redirect, Response, session, url_for, flash
 from flask_restful import Resource, Api
 from datetime import datetime
+import random
 
 tmpl_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
 app = Flask(__name__, template_folder=tmpl_dir)
@@ -217,7 +218,7 @@ def all_club_tasks():
   club_task_detail = []
   for result in cursor:
     club_task_detail.append(result)
-  context = dict(club_task_detail=club_task_detail)
+  context = dict(club_task_detail=club_task_detail, club_id=session['manage_club'])
   return render_template("club_tasks.html", **context)
 
 @app.route('/club_tasks/add/<club_task_id>')
@@ -284,17 +285,22 @@ def add_item(item_id):
 
 @app.route('/store/<store_addr>')
 def get_store_by_id(store_addr):
-      cursor = g.conn.execute("SELECT S.name, I.name, I.product_id FROM store S Natural Join have H, item I WHERE S.address =  %(store_addr)s LIMIT 10", {'store_addr': store_addr} )
-      store_names = []
+      if not session.get('store_addr'):
+            session['store_addr'] = store_addr
+      print("hhhhhhhhhh", session['store_addr'])
+      cursor = g.conn.execute("SELECT S.address, I.name, I.product_id FROM store S Natural Join have H, item I WHERE S.address =  %(store_addr)s LIMIT 100", {'store_addr': store_addr} )
+      random_sample = random.sample(range(1, 100), 10)
+      
+      store_addresses = []
       item_names = []
       item_ids = []
       for result in cursor:
-        print(result)
-        store_names.append(result[0])
+        #print(result)
+        store_addresses.append(result[0])
         item_names.append(result[1])
         item_ids.append(result[2])
       cursor.close()
-      context = dict(store_names = store_names, item_names=item_names, item_ids=item_ids)
+      context = dict(store_addresses = store_addresses, item_names=item_names, item_ids=item_ids, random_sample=random_sample, store_addr=session['store_addr'])
       return render_template("store_individual.html", **context)
       
       
@@ -320,9 +326,12 @@ def login():
     
 @app.route('/main', methods=['POST', 'GET'])
 def main_page():
-    user_id = request.form['uid']
-    session['uid'] = user_id
-    cur = g.conn.execute('SELECT name FROM sc4926.users WHERE user_id = {}'.format(user_id))
+    if request.method == 'POST':
+        user_id = request.form['uid']
+        session['uid'] = user_id
+    else:
+        user_id = session.get('uid')
+    cur = g.conn.execute("SELECT name FROM sc4926.users WHERE user_id = %(user_id)s", {'user_id': user_id})
     user_info = dict(cur.fetchone())
     cur.close()
     user_info['first_name'] = user_info['name'].split()[0]

@@ -12,11 +12,8 @@
 
   <div>
     {% for name, amount, leader in club_name|zip(club_amount, leader_name)%}
-    Club Name:{{ name }} Current People: {{ amount}} 
-    Leader: {{leader}}
-    <form action='/add_item', method="POST">
-        <button>Join this group!</button>
-    </form>
+    <li>Club Name:{{ name }} Current People: {{ amount}} Leader: {{leader}}</li>
+
 {% endfor %}
   </div>
 

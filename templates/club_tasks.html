@@ -5,9 +5,10 @@
         font-family: arial;
         }
     </style>
-  
+    
     <body>
         <h4>Club task information</h4>
+        <p><a href='/club/management/{{club_id}}/club_task'>Back to Your Club Task</a></p>
         {% with messages = get_flashed_messages() %}
         {% if messages %}
             <ul class=flashes>

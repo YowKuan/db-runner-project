@@ -19,7 +19,8 @@
   <h3>Here are our lovely members</h3>
   <div>
     {% for member_name, user_id in member_names|zip(user_ids) %}
-    <li>{{user_id}} {{member_name}}
+    <p><a href="/profile/{{user_id}}"> {{user_id}} {{member_name}}</a></p>
+    <li>
         <form action='/club/management/{{club_id}}/user/{{user_id}}', method="DELETE">
             <button>Kick the user out of this club</button>
         </form>
@@ -28,4 +29,4 @@
   </div>
 
 
-<p><a href="main">Go back to home page</a></p>
+<p><a href="/main">Go back to home page</a></p>
