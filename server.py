@@ -296,7 +296,7 @@ def add_to_favorite():
       return redirect(url_for('favorite_items'))
     except:
       flash("This item has already been added")
-      return redirect(url_for('favorite_items'))
+      return redirect(url_for('user_items'))
     
 
 @app.route('/favorite/remove/<product_id>')
