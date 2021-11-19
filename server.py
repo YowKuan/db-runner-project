@@ -134,6 +134,10 @@ def run():
     cur = g.conn.execute("SELECT run_id, distance, start_time, time_spent \
         FROM sc4926.run_exercise WHERE user_id = %(user_id)s", {'user_id': user_id})
     run_raw_data = list(cur.fetchall())
+    if len(run_raw_data) == 0:
+        message = "You have not started running yet! Go running with your friends today!"
+    else:
+        message = "You are great! Keep Going!"
     run_new_data = []
     for i, row in enumerate(run_raw_data):
         run_new_data.append({})
@@ -148,7 +152,7 @@ def run():
                 run_new_data[i]['Id'] = v
 
     cur.close()
-    return render_template("run.html", run_stats=run_new_data)
+    return render_template("run.html", run_stats=run_new_data, message=message)
 
 @app.route('/run/<run_id>')
 def run_detail(run_id):
@@ -200,17 +204,42 @@ def leaderboard():
 
 @app.route('/leaderboard/distance')
 def distance_ranking():
+    new_ranking = []
+    user_id = session.get('uid')
+    message = None
     cur = g.conn.execute('SELECT user_id, SUM(distance) as total_distance FROM sc4926.run_exercise \
       GROUP BY (user_id) ORDER BY (SUM(distance)) DESC LIMIT 100')
     ranking = list(cur.fetchall())
-    return render_template("ranking.html", ranking=ranking, type='Total Distance')
+    for i, row in enumerate(ranking):
+        new_ranking.append({})
+        for k, v in row.items():
+            if k == 'total_distance':
+                new_ranking[i]['total_distance'] = str(round(v, 4)) + ' km'
+            else:
+                new_ranking[i][k] = v
+        if user_id == new_ranking[i]['user_id']:
+            message = "You are top {} in the ranking!".format(i+1)
+    return render_template("ranking.html", ranking=new_ranking, type='Total Distance', message=message)
 
 @app.route('/leaderboard/speed')
 def speed_ranking():
+    new_ranking = []
+    user_id = session.get('uid')
+    message = None
     cur = g.conn.execute('SELECT user_id, SUM(distance) / SUM(time_spent) as avg_speed \
         FROM sc4926.run_exercise GROUP BY (user_id) ORDER BY (avg_speed) DESC LIMIT 100;')
     ranking = list(cur.fetchall())
-    return render_template("ranking.html", ranking=ranking, type='Average Speed')
+    for i, row in enumerate(ranking):
+        new_ranking.append({})
+        for k, v in row.items():
+            if k == 'avg_speed':
+                new_ranking[i]['avg_speed'] = str(round(v * 3600, 4)) + ' km/hr'
+            else:
+                new_ranking[i][k] = v
+        if int(user_id) == new_ranking[i]['user_id']:
+            message = "You are top {} in the ranking!".format(i+1)
+
+    return render_template("ranking.html", ranking=new_ranking, type='Average Speed', message=message)
 
 
 @app.route('/task')
