@@ -11,9 +11,11 @@ Read about it online.
 import os
 import json
   # accessible as a variable in index.html:
+from collections import defaultdict
 from sqlalchemy import *
 from sqlalchemy.pool import NullPool
 from flask import Flask, request, render_template, g, redirect, Response, session
+import datetime
 
 tmpl_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
 app = Flask(__name__, template_folder=tmpl_dir)
@@ -92,73 +94,9 @@ def teardown_request(exception):
 #
 @app.route('/')
 def index():
-  """
-  request is a special object that Flask provides to access web request information:
-
-  request.method:   "GET" or "POST"
-  request.form:     if the browser submitted a form, this contains the data in the form
-  request.args:     dictionary of URL arguments, e.g., {a:1, b:2} for http://localhost?a=1&b=2
-
-  See its API: https://flask.palletsprojects.com/en/2.0.x/api/?highlight=incoming%20request%20data
-
-  """
-
-  # DEBUG: this is debugging code to see what request looks like
-  print(request.args)
-
-
-  #
-  # example of a database query
-  #
-  cursor = g.conn.execute("SELECT name FROM test")
-  names = []
-  for result in cursor:
-    names.append(result['name'])  # can also be accessed using result[0]
-  cursor.close()
-
-  #
-  # Flask uses Jinja templates, which is an extension to HTML where you can
-  # pass data to a template and dynamically generate HTML based on the data
-  # (you can think of it as simple PHP)
-  # documentation: https://realpython.com/primer-on-jinja-templating/
-  #
-  # You can see an example template in templates/index.html
-  #
-  # context are the variables that are passed to the template.
-  # for example, "data" key in the context variable defined below will be 
-  # accessible as a variable in index.html:
-  #
-  #     # will print: [u'grace hopper', u'alan turing', u'ada lovelace']
-  #     <div>{{data}}</div>
-  #     
-  #     # creates a <div> tag for each element in data
-  #     # will print: 
-  #     #
-  #     #   <div>grace hopper</div>
-  #     #   <div>alan turing</div>
-  #     #   <div>ada lovelace</div>
-  #     #
-  #     {% for n in data %}
-  #     <div>{{n}}</div>
-  #     {% endfor %}
-  #
-  context = dict(data = names)
-
-
-  #
-  # render_template looks in the templates/ folder for files.
-  # for example, the below file reads template/index.html
-  #
+  session['uid'] = False
   return render_template("index.html")
 
-#
-# This is an example of a different path.  You can see it at:
-# 
-#     localhost:8111/another
-#
-# Notice that the function name is another() rather than index()
-# The functions for each app.route need to have different names
-#
 @app.route('/another')
 def another():
   return render_template("another.html")
@@ -179,22 +117,180 @@ def login():
 
 @app.route('/main', methods=['POST', 'GET'])
 def main_page():
-    user_id = request.form['uid']
-    session['uid'] = user_id
-    cur = g.conn.execute('SELECT name FROM sc4926.users WHERE user_id = {}'.format(user_id))
+    if request.method == 'POST':
+        user_id = request.form['uid']
+        session['uid'] = user_id
+    else:
+        user_id = session.get('uid')
+    cur = g.conn.execute("SELECT name FROM sc4926.users WHERE user_id = %(user_id)s", {'user_id': user_id})
     user_info = dict(cur.fetchone())
     cur.close()
     user_info['first_name'] = user_info['name'].split()[0]
     return render_template("main.html", **user_info)
+
+@app.route('/run')
+def run():
+    user_id = session.get('uid')
+    cur = g.conn.execute("SELECT run_id, distance, start_time, time_spent \
+        FROM sc4926.run_exercise WHERE user_id = %(user_id)s", {'user_id': user_id})
+    run_raw_data = list(cur.fetchall())
+    run_new_data = []
+    for i, row in enumerate(run_raw_data):
+        run_new_data.append({})
+        for k, v in row.items():
+            if k == 'distance':
+                run_new_data[i]['Distance'] = str(round(v / 1.6, 2)) + ' mile'
+            elif k == 'start_time':
+                run_new_data[i]['Date'] = '/'.join([str(v.year), str(v.month), str(v.day)])
+            elif k == 'time_spent':
+                run_new_data[i]['Time'] = str(datetime.timedelta(seconds=int(v)))
+            else:
+                run_new_data[i]['Id'] = v
+
+    cur.close()
+    return render_template("run.html", run_stats=run_new_data)
+
+@app.route('/run/<run_id>')
+def run_detail(run_id):
+    user_id = session.get('uid')
+    cur = g.conn.execute('SELECT * FROM sc4926.run_exercise WHERE user_id = %(user_id)s \
+       AND run_id = %(run_id)s', {'user_id': user_id, 'run_id': run_id})
+    run_raw_data = dict(cur.fetchone())
+    run_raw_data['time_spent'] = str(datetime.timedelta(seconds=int(run_raw_data['time_spent'])))
+    run_raw_data['distance'] = str(round(run_raw_data['distance'] / 1.6, 4)) + ' mile'
+    run_raw_data['heart_rate'] = str(round(run_raw_data['heart_rate'], 7) * 10)
+    run_raw_data['elevation'] = str(round(run_raw_data['elevation'], 6))
+    run_raw_data['calories'] = str(round(run_raw_data['calories'], 6))
+    cur.close()
+
+    cur = g.conn.execute('SELECT * FROM sc4926.run_detailed_km \
+        WHERE run_id = %(run_id)s', {'run_id': run_id})
+    run_mile_raw_data = list(cur.fetchall())
+    run_mile = []
+    for i, row in enumerate(run_mile_raw_data):
+        run_mile.append({})
+        for k, v in row.items():
+            if k == 'time_spent':
+                run_mile[i]['time_spent'] = str(datetime.timedelta(seconds=int(v)))
+            elif k == 'pace':
+                run_mile[i]['pace'] = str(round(v, 6))
+            else:
+                run_mile[i][k] = v
+
+    return render_template("run_detailed.html", run_detail_stats=run_raw_data, run_mile_stats=run_mile)
+
+@app.route('/profile/<user_id>')
+def check_profile(user_id):
+    cur = g.conn.execute('SELECT * FROM sc4926.users WHERE user_id = {}'.format(user_id))
+    user_info = dict(cur.fetchone())
+    cur.close()
+    return render_template("profile.html", user_info=user_info)
 
 @app.route('/profile')
 def profile():
     user_id = session.get('uid')
     cur = g.conn.execute('SELECT * FROM sc4926.users WHERE user_id = {}'.format(user_id))
     user_info = dict(cur.fetchone())
-    params = {'user_info': user_info}
     cur.close()
-    return render_template("profile.html", **user_info)
+    return render_template("profile.html", user_info=user_info)
+
+@app.route('/leaderboard')
+def leaderboard():
+    return render_template("leaderboard.html")
+
+@app.route('/leaderboard/distance')
+def distance_ranking():
+    cur = g.conn.execute('SELECT user_id, SUM(distance) as total_distance FROM sc4926.run_exercise \
+      GROUP BY (user_id) ORDER BY (SUM(distance)) DESC LIMIT 100')
+    ranking = list(cur.fetchall())
+    return render_template("ranking.html", ranking=ranking, type='Total Distance')
+
+@app.route('/leaderboard/speed')
+def speed_ranking():
+    cur = g.conn.execute('SELECT user_id, SUM(distance) / SUM(time_spent) as avg_speed \
+        FROM sc4926.run_exercise GROUP BY (user_id) ORDER BY (avg_speed) DESC LIMIT 100;')
+    ranking = list(cur.fetchall())
+    return render_template("ranking.html", ranking=ranking, type='Average Speed')
+
+
+@app.route('/task')
+def task():
+    return render_template("task.html")
+
+@app.route('/complete_task/<task_id>', methods=['POST', 'GET'])
+def task_detail(task_id):
+    user_id = session.get('uid')
+    if request.method == 'POST':
+        # Check if the task has done
+        columns = ""
+        cur = g.conn.execute('SELECT * FROM sc4926.do_tasks WHERE user_id = %(user_id)s \
+          AND task_id = %(task_id)s', {'user_id': user_id, 'task_id': task_id})
+        user_task_info = list(cur.fetchall())
+        cur.close()
+        if len(user_task_info) > 0:
+            return render_template("error_task.html", err_mesage='The task has already been done!')
+        
+        # Check the expereince level
+        cur = g.conn.execute('SELECT * FROM sc4926.users WHERE user_id = {}'.format(user_id))
+        user_info = dict(cur.fetchone())
+        cur.close()
+        cur = g.conn.execute('SELECT * FROM sc4926.individual_task WHERE task_id = %(task_id)s', {'task_id': task_id})
+        task_info = dict(cur.fetchone())
+        cur.close()
+        if user_info['level'] < task_info['level_limit']:
+            return render_template("error_task.html", err_mesage='Your level can not do this task!')
+
+        # Insert new task
+        start_time = finish_time = "'" + datetime.datetime.now().strftime(format="%Y-%m-%d %H:%M:%S") + "'"
+        value = ','.join([user_id, task_id, start_time, finish_time])
+        cur = g.conn.execute('INSERT INTO do_tasks (user_id, task_id, start_time, finish_time)\
+          Values ({});'.format(value))
+        
+        # Update user profile
+        updated_experience = user_info['experience'] + task_info['experience']
+        updated_coins = user_info['coin'] + task_info['reward']
+        cur = g.conn.execute('UPDATE sc4926.users SET experience = %(exp)s, \
+            coin = %(coin)s WHERE user_id = %(uid)s', {'exp': updated_experience, 'coin': updated_coins, 'uid': user_id})
+        cur.close()
+
+
+    cur = g.conn.execute('SELECT * FROM sc4926.do_tasks WHERE user_id = %(user_id)s \
+       AND task_id = %(task_id)s', {'user_id': user_id, 'task_id': task_id})
+    user_task_info = dict(cur.fetchone())
+    cur.close()
+    cur = g.conn.execute('SELECT * FROM sc4926.individual_task WHERE task_id = %(task_id)s', {'task_id': task_id})
+    task_info = dict(cur.fetchone())
+    cur.close()
+    return render_template("individual_task_detailed.html", do_task_info=user_task_info, task_info=task_info)
+
+@app.route('/all_task')
+def all_task():
+    cur = g.conn.execute("SELECT * FROM sc4926.individual_task")
+    task_data = list(cur.fetchall())
+    return render_template("all_task.html", task_info=task_data)
+
+@app.route('/complete_task')
+def complete_task():
+    user_id = session.get('uid')
+    cur = g.conn.execute("SELECT * FROM sc4926.do_tasks WHERE user_id = %(user_id)s", {'user_id': user_id})
+    task_raw_data = list(cur.fetchall())
+    cur.close()
+    task_new_data = []
+    task_id = None
+    for i, row in enumerate(task_raw_data):
+        task_new_data.append({})
+        for k, v in row.items():
+            if k == 'finish_time':
+                task_new_data[i]['Finish Date'] = '/'.join([str(v.year), str(v.month), str(v.day)])
+            elif k == 'task_id':
+                task_new_data[i]['Task_ID'] = v
+                task_id = v
+        if task_id:
+            cur = g.conn.execute('SELECT * FROM sc4926.individual_task WHERE task_id = %(task_id)s', {'task_id': task_id})
+            task_info = dict(cur.fetchone())
+            cur.close()
+            task_new_data[i]['Difficulty'] = task_info['difficulty']
+    return render_template("individual_task.html", task_info=task_new_data)
 
 if __name__ == "__main__":
   import click

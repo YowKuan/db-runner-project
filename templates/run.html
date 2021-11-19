@@ -1,0 +1,33 @@
+<html>
+    <style>
+        body{ 
+        font-size: 15pt;
+        font-family: arial;
+        }
+    </style>
+  
+    <body>
+        <h2>Hi It's your running record!</h2>
+        <h3>Keep going!</h3>
+        <div>
+            {% for run in run_stats %}
+
+            <li>
+                <a href="run/{{run.Id}}">Details</a>
+                {% for key, value in run.items() %}
+                    {% if key != 'Id' %}    
+                        {{ key }} : {{ value }}
+                    {% endif %}
+                {% endfor %}
+            </li>
+            {% endfor %}
+    
+        </div>
+        
+    <p><a href="/main">Back to Main Page</a></p>
+    
+  
+    </body>
+  
+  
+</html>
