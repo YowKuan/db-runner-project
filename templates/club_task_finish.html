@@ -1,0 +1,28 @@
+<html>
+    <style>
+        body{ 
+        font-size: 15pt;
+        font-family: arial;
+        }
+    </style>
+  
+    <body>
+        <h2>It's your finished group task!</h2>
+        <div>
+            {% for task in completed_club_task %}
+
+            <li>
+                <a href="/club/{{club_id}}/{{task}}">Details for club task {{task}}</a>
+            </li>
+            {% endfor %}
+    
+        </div>
+    
+    <p><a href="/task">Back to Task Page</a></p>
+    <p><a href="/main">Back to Main Page</a></p>
+    
+  
+    </body>
+  
+  
+</html>

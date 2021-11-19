@@ -12,21 +12,18 @@
   <h1>{{store_names[0]}}</h1>
   <h2>Here are the first 10 available items in our store</h2>
   <div>
-    {% for item in item_names %}
-    <div>{{item}} 
-        <form action='/add_item', method="POST">
-            <input name="to" id="to" value="Mom">
+    {% for item, item_id in item_names|zip(item_ids) %}
+    <div>{{item_id}} : {{item}} 
+        <form action='/add_item/{{item_id}}', method="POST">
             <button>Add the item</button>
         </form>
     </div>
     {% endfor %}
   </div>
 
-<p><a href="{{ url_for('index') }}">Go back to home page</a></p>
+<p><a href="/main">Go back to home page</a></p>
 
-<form method="POST" action="/add">
-<p>Name of new computer scientist: <input type="text" name="name"> <input type="submit" value="Add"></p>
-</form>
+
 
 </body>
 
